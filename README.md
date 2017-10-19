@@ -1,4 +1,4 @@
-# ManageIQ::PostgresAdmin
+# ManageIQ::PostgresHaAdmin
 
 [![Gem Version](https://badge.fury.io/rb/manageiq-postgres_ha_admin.svg)](http://badge.fury.io/rb/manageiq-postgres_ha_admin)
 [![Build Status](https://travis-ci.org/ManageIQ/manageiq-postgres_ha_admin.svg)](https://travis-ci.org/ManageIQ/manageiq-postgres_ha_admin)

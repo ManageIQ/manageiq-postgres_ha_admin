@@ -2,6 +2,7 @@ require 'active_support/all'
 require 'util/miq-password'
 require 'fileutils'
 
+module ManageIQ
 module PostgresHaAdmin
   class DatabaseYml
     attr_reader :db_yml_file, :environment
@@ -56,4 +57,5 @@ module PostgresHaAdmin
       hash.delete_if { |_k, v| v.nil? || v.to_s.strip.empty? }
     end
   end
+end
 end

@@ -2,6 +2,7 @@ require 'active_support/all'
 require 'pg'
 require 'pg/dsn_parser'
 
+module ManageIQ
 module PostgresHaAdmin
   class FailoverDatabases
     TABLE_NAME = "repl_nodes".freeze
@@ -73,4 +74,5 @@ module PostgresHaAdmin
       !result['to_regclass'].nil?
     end
   end
+end
 end

@@ -1,6 +1,6 @@
 require 'util/postgres_admin'
 
-describe PostgresHaAdmin::FailoverMonitor do
+describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
   let(:db_yml)      { double('DatabaseYml') }
   let(:failover_db) { double('FailoverDatabases') }
 
@@ -15,8 +15,8 @@ describe PostgresHaAdmin::FailoverMonitor do
     logger
   end
   let(:failover_monitor) do
-    expect(PostgresHaAdmin::DatabaseYml).to receive(:new).and_return(db_yml)
-    expect(PostgresHaAdmin::FailoverDatabases).to receive(:new).and_return(failover_db)
+    expect(ManageIQ::PostgresHaAdmin::DatabaseYml).to receive(:new).and_return(db_yml)
+    expect(ManageIQ::PostgresHaAdmin::FailoverDatabases).to receive(:new).and_return(failover_db)
     failover_instance = described_class.new(:logger => logger)
     failover_instance
   end
@@ -160,8 +160,8 @@ failover_attempts: 20
   end
 
   def stub_monitor_constants
-    stub_const("PostgresHaAdmin::FailoverMonitor::FAILOVER_ATTEMPTS", 1)
-    stub_const("PostgresHaAdmin::FailoverMonitor::FAILOVER_CHECK_FREQUENCY", 1)
+    stub_const("ManageIQ::PostgresHaAdmin::FailoverMonitor::FAILOVER_ATTEMPTS", 1)
+    stub_const("ManageIQ::PostgresHaAdmin::FailoverMonitor::FAILOVER_CHECK_FREQUENCY", 1)
   end
 
   def active_databases_conninfo

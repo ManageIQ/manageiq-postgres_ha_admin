@@ -1,4 +1,4 @@
-describe PostgresHaAdmin::DatabaseYml do
+describe ManageIQ::PostgresHaAdmin::DatabaseYml do
   let(:yml_utils) { described_class.new(@yml_file.path, 'test') }
 
   before do

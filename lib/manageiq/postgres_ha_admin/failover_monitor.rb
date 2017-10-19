@@ -2,6 +2,7 @@ require 'active_support/all'
 require 'pg'
 require 'linux_admin'
 
+module ManageIQ
 module PostgresHaAdmin
   class FailoverMonitor
     RAILS_ROOT = [
@@ -144,4 +145,5 @@ module PostgresHaAdmin
       end
     end
   end
+end
 end

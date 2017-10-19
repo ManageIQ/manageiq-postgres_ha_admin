@@ -1,6 +1,3 @@
-require 'postgres_ha_admin/failover_databases'
-require 'pg'
-
 describe PostgresHaAdmin::FailoverDatabases do
   let(:logger) { Logger.new(@logger_file) }
   let(:failover_databases) { described_class.new(@yml_file.path, logger) }

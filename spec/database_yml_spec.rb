@@ -1,5 +1,3 @@
-require 'postgres_ha_admin/database_yml'
-
 describe PostgresHaAdmin::DatabaseYml do
   let(:yml_utils) { described_class.new(@yml_file.path, 'test') }
 

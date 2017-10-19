@@ -1,4 +1,3 @@
-require 'postgres_ha_admin/failover_monitor'
 require 'util/postgres_admin'
 
 describe PostgresHaAdmin::FailoverMonitor do

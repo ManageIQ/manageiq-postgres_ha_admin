@@ -183,7 +183,7 @@ failover_attempts: 20
       end
 
       it "returns false if postgres database not in recovery mode" do
-        expect(described_class.send(:database_in_recovery?, @connection)).to be false
+        expect(failover_monitor.send(:database_in_recovery?, @connection)).to be false
       end
     end
   end

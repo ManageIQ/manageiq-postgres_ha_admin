@@ -5,7 +5,7 @@ require 'pg/dsn_parser'
 module ManageIQ
 module PostgresHaAdmin
   class FailoverDatabases
-    TABLE_NAME = "repl_nodes".freeze
+    TABLE_NAME = "repmgr.nodes".freeze
 
     attr_reader :yml_file
 
@@ -61,7 +61,7 @@ module PostgresHaAdmin
     end
 
     def entry_is_active_master?(record)
-      record[:type] == 'master' && record[:active]
+      record[:type] == 'primary' && record[:active]
     end
 
     def all_databases

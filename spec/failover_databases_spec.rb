@@ -27,7 +27,7 @@ describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
     it "return list of active databases saved in 'config/failover_databases.yml'" do
       File.write(@yml_file, initial_db_list.to_yaml)
       expect(failover_databases.active_databases).to contain_exactly(
-        {:type => 'master', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
+        {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
         {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'})
     end
   end
@@ -49,6 +49,7 @@ describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
       end
 
       @connection.exec("START TRANSACTION")
+      @connection.exec("CREATE SCHEMA repmgr")
       @connection.exec(<<-SQL)
         CREATE TABLE #{described_class::TABLE_NAME}  (
           type text NOT NULL,
@@ -61,10 +62,10 @@ describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
         INSERT INTO
           #{described_class::TABLE_NAME}(type, conninfo, active)
         VALUES
-          ('master', 'host=203.0.113.1 user=root dbname=vmdb_test', 'true'),
+          ('primary', 'host=203.0.113.1 user=root dbname=vmdb_test', 'true'),
           ('standby', 'host=203.0.113.2 user=root dbname=vmdb_test', 'true'),
           ('standby', 'host=203.0.113.3 user=root dbname=vmdb_test', 'false'),
-          ('master', 'host=203.0.113.5 user=root dbname=vmdb_test', 'false')
+          ('primary', 'host=203.0.113.5 user=root dbname=vmdb_test', 'false')
       SQL
     end
 
@@ -96,7 +97,7 @@ describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
         expect(failover_databases.host_is_repmgr_primary?('203.0.113.2', @connection)).to be false
       end
 
-      it "return false if supplied connection established with not active master database" do
+      it "return false if supplied connection established with not active primary database" do
         expect(failover_databases.host_is_repmgr_primary?('203.0.113.5', @connection)).to be false
       end
     end
@@ -104,10 +105,10 @@ describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
 
   def initial_db_list
     arr = []
-    arr << {:type => 'master', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'}
+    arr << {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'}
     arr << {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'}
     arr << {:type => 'standby', :active => false, :host => '203.0.113.3', :user => 'root', :dbname => 'vmdb_test'}
-    arr << {:type => 'master', :active => false, :host => '203.0.113.5', :user => 'root', :dbname => 'vmdb_test'}
+    arr << {:type => 'primary', :active => false, :host => '203.0.113.5', :user => 'root', :dbname => 'vmdb_test'}
     arr
   end
 

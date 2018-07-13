@@ -4,29 +4,29 @@ require 'fileutils'
 
 module ManageIQ
 module PostgresHaAdmin
-  class DatabaseYml
-    attr_reader :db_yml_file, :environment
+  class RailsConfigHandler < ConfigHandler
+    attr_reader :environment
 
-    def initialize(db_yml_file, environment)
-      @db_yml_file = db_yml_file
-      @environment = environment
+    def initialize(file_path, options = {})
+      super
+      @environment = options[:environment]
     end
 
     def read
-      rails_params_to_pg(YAML.load_file(db_yml_file)[environment])
+      rails_params_to_pg(YAML.load_file(file_path)[environment])
     end
 
     def write(params)
-      db_yml = YAML.load_file(db_yml_file)
+      db_yml = YAML.load_file(file_path)
       db_yml[environment].merge!(pg_parameters_to_rails(params))
       remove_empty(db_yml[environment])
 
-      new_name = "#{db_yml_file}_#{Time.current.strftime("%d-%B-%Y_%H.%M.%S")}"
-      FileUtils.copy(db_yml_file, new_name)
+      new_name = "#{file_path}_#{Time.current.strftime("%d-%B-%Y_%H.%M.%S")}"
+      FileUtils.copy(file_path, new_name)
       begin
-        File.write(db_yml_file, db_yml.to_yaml)
+        File.write(file_path, db_yml.to_yaml)
       rescue
-        FileUtils.mv(new_name, db_yml_file)
+        FileUtils.mv(new_name, file_path)
         raise
       end
       new_name

@@ -20,7 +20,7 @@ module PostgresHaAdmin
                    failover_yml_file: '/var/www/miq/vmdb/config/failover_databases.yml',
                    ha_admin_yml_file: '/var/www/miq/vmdb/config/ha_admin.yml',
                    environment: 'production')
-      @database_yml = DatabaseYml.new(db_yml_file, environment)
+      @database_yml = RailsConfigHandler.new(db_yml_file, :environment => environment)
       @failover_db = FailoverDatabases.new(failover_yml_file)
       initialize_settings(ha_admin_yml_file)
     end

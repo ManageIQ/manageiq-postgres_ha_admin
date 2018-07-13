@@ -51,7 +51,7 @@ failover_attempts: 20
         :user     => 'root',
         :password => 'password'
       }
-      allow(db_yml).to receive(:pg_params_from_database_yml).and_return(params)
+      allow(db_yml).to receive(:read).and_return(params)
     end
 
     context "primary database is accessable" do
@@ -121,7 +121,7 @@ failover_attempts: 20
       ]
       settings_from_db_yml = {:host => 'host.example.com', :password => 'mypassword'}
       expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_servers_conninfo)
-      expect(db_yml).to receive(:pg_params_from_database_yml).and_return(settings_from_db_yml)
+      expect(db_yml).to receive(:read).and_return(settings_from_db_yml)
       expect(failover_monitor.active_servers_conninfo).to match_array(expected_conninfo)
     end
   end
@@ -140,7 +140,7 @@ failover_attempts: 20
     expect(linux_admin).to receive(:stop)
     expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_databases_conninfo)
     expect(failover_db).to receive(:update_failover_yml)
-    expect(db_yml).to receive(:update_database_yml)
+    expect(db_yml).to receive(:write)
     expect(linux_admin).to receive(:restart)
   end
 
@@ -148,7 +148,7 @@ failover_attempts: 20
     expect(linux_admin).to receive(:stop)
     expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_databases_conninfo)
     expect(failover_db).not_to receive(:update_failover_yml)
-    expect(db_yml).not_to receive(:update_database_yml)
+    expect(db_yml).not_to receive(:write)
     expect(linux_admin).not_to receive(:restart)
   end
 

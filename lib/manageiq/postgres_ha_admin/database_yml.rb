@@ -12,11 +12,11 @@ module PostgresHaAdmin
       @environment = environment
     end
 
-    def pg_params_from_database_yml
+    def read
       rails_params_to_pg(YAML.load_file(db_yml_file)[environment])
     end
 
-    def update_database_yml(params)
+    def write(params)
       db_yml = YAML.load_file(db_yml_file)
       db_yml[environment].merge!(pg_parameters_to_rails(params))
       remove_empty(db_yml[environment])

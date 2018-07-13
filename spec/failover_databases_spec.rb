@@ -1,15 +1,12 @@
 describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
-  let(:logger) { Logger.new(@logger_file) }
-  let(:failover_databases) { described_class.new(@yml_file.path, logger) }
+  let(:failover_databases) { described_class.new(@yml_file.path) }
 
   before do
     @yml_file = Tempfile.new('failover_databases.yml')
-    @logger_file = Tempfile.new('ha_admin.log')
   end
 
   after do
     @yml_file.close(true)
-    @logger_file.close(true)
   end
 
   describe "#active_databases_conninfo_hash" do

@@ -1,4 +1,4 @@
-describe ManageIQ::PostgresHaAdmin::FailoverDatabases do
+describe ManageIQ::PostgresHaAdmin::ServerStore do
   let(:failover_databases) { described_class.new(@yml_file.path) }
 
   before do

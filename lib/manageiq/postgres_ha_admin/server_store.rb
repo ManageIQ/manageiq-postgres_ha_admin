@@ -4,7 +4,7 @@ require 'pg/dsn_parser'
 
 module ManageIQ
 module PostgresHaAdmin
-  class FailoverDatabases
+  class ServerStore
     include Logging
 
     TABLE_NAME = "repmgr.nodes".freeze

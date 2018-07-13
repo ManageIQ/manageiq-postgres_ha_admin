@@ -9,10 +9,10 @@ module PostgresHaAdmin
 
     TABLE_NAME = "repmgr.nodes".freeze
 
-    attr_reader :yml_file
+    attr_reader :servers_file
 
-    def initialize(yml_file)
-      @yml_file = yml_file
+    def initialize(servers_file)
+      @servers_file = servers_file
     end
 
     def active_databases_conninfo_hash
@@ -28,7 +28,7 @@ module PostgresHaAdmin
 
     def update_failover_yml(connection)
       arr_yml = query_repmgr(connection)
-      File.write(yml_file, arr_yml.to_yaml) unless arr_yml.empty?
+      File.write(servers_file, arr_yml.to_yaml) unless arr_yml.empty?
     rescue IOError => err
       logger.error("#{err.class}: #{err}")
       logger.error(err.backtrace.join("\n"))
@@ -66,8 +66,8 @@ module PostgresHaAdmin
     end
 
     def all_databases
-      return [] unless File.exist?(yml_file)
-      YAML.load_file(yml_file)
+      return [] unless File.exist?(servers_file)
+      YAML.load_file(servers_file)
     end
 
     def table_exists?(connection, table_name)

@@ -1,5 +1,5 @@
 describe ManageIQ::PostgresHaAdmin::RailsConfigHandler do
-  subject { described_class.new(@yml_file.path, :environment => 'test') }
+  subject { described_class.new(:file_path => @yml_file.path, :environment => 'test') }
 
   before do
     @yml_file = Tempfile.new('database.yml')

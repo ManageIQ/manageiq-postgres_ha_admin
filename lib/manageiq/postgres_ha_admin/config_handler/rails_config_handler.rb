@@ -5,10 +5,10 @@ require 'fileutils'
 module ManageIQ
 module PostgresHaAdmin
   class RailsConfigHandler < ConfigHandler
-    attr_reader :environment
+    attr_reader :environment, :file_path
 
-    def initialize(file_path, options = {})
-      super
+    def initialize(options = {})
+      @file_path   = options[:file_path]
       @environment = options[:environment]
     end
 

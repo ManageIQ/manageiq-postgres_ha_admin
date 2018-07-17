@@ -21,6 +21,12 @@ DOC
     @yml_file.close(true)
   end
 
+  describe "#name" do
+    it "identifies the config handler by environment" do
+      expect(subject.name).to eq("Rails test Config Handler")
+    end
+  end
+
   describe "#read" do
     it "returns pg connection parameters based on 'database.yml'" do
       params = subject.read

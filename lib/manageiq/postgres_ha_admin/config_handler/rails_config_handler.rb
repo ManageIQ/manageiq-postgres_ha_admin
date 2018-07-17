@@ -12,6 +12,10 @@ module PostgresHaAdmin
       @environment = options[:environment]
     end
 
+    def name
+      "Rails #{environment} Config Handler"
+    end
+
     def read
       rails_params_to_pg(YAML.load_file(file_path)[environment])
     end

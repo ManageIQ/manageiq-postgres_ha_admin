@@ -1,6 +1,10 @@
 module ManageIQ
 module PostgresHaAdmin
   class ConfigHandler
+    def name
+      "Config Handler"
+    end
+
     def read
       raise NotImplementedError
     end

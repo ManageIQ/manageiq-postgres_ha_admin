@@ -1,29 +1,19 @@
 describe ManageIQ::PostgresHaAdmin::ServerStore do
-  let(:failover_databases) { described_class.new(@yml_file.path) }
-
-  before do
-    @yml_file = Tempfile.new('failover_databases.yml')
-  end
-
-  after do
-    @yml_file.close(true)
-  end
-
   describe "#active_databases_conninfo_hash" do
     it "returns a list of active databases connection info" do
       expected = [
         {:host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
         {:host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'}
       ]
-      File.write(@yml_file, initial_db_list.to_yaml)
-      expect(failover_databases.active_databases_conninfo_hash).to contain_exactly(*expected)
+      subject.instance_variable_set(:@servers, initial_db_list)
+      expect(subject.active_databases_conninfo_hash).to contain_exactly(*expected)
     end
   end
 
   describe "#active_databases" do
     it "return list of active databases saved in 'config/failover_databases.yml'" do
-      File.write(@yml_file, initial_db_list.to_yaml)
-      expect(failover_databases.active_databases).to contain_exactly(
+      subject.instance_variable_set(:@servers, initial_db_list)
+      expect(subject.active_databases).to contain_exactly(
         {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
         {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'})
     end
@@ -67,35 +57,33 @@ describe ManageIQ::PostgresHaAdmin::ServerStore do
     end
 
     describe "#update_failover_yml" do
-      it "updates 'failover_databases.yml'" do
-        failover_databases.update_failover_yml(@connection)
+      it "updates the servers list" do
+        subject.update_failover_yml(@connection)
 
-        yml_hash = YAML.load_file(@yml_file)
-        expect(yml_hash).to eq initial_db_list
+        expect(subject.servers).to eq initial_db_list
 
         add_new_record
 
-        failover_databases.update_failover_yml(@connection)
-        yml_hash = YAML.load_file(@yml_file)
-        expect(yml_hash).to eq new_db_list
+        subject.update_failover_yml(@connection)
+        expect(subject.servers).to eq new_db_list
       end
     end
 
     describe "#host_is_repmgr_primary?" do
       it "return true if supplied connection established with primary database" do
-        expect(failover_databases.host_is_repmgr_primary?('203.0.113.1', @connection)).to be true
+        expect(subject.host_is_repmgr_primary?('203.0.113.1', @connection)).to be true
       end
 
       it "return false if supplied connection established with not active standby database" do
-        expect(failover_databases.host_is_repmgr_primary?('203.0.113.3', @connection)).to be false
+        expect(subject.host_is_repmgr_primary?('203.0.113.3', @connection)).to be false
       end
 
       it "return false if supplied connection established with active standby database" do
-        expect(failover_databases.host_is_repmgr_primary?('203.0.113.2', @connection)).to be false
+        expect(subject.host_is_repmgr_primary?('203.0.113.2', @connection)).to be false
       end
 
       it "return false if supplied connection established with not active primary database" do
-        expect(failover_databases.host_is_repmgr_primary?('203.0.113.5', @connection)).to be false
+        expect(subject.host_is_repmgr_primary?('203.0.113.5', @connection)).to be false
       end
     end
   end

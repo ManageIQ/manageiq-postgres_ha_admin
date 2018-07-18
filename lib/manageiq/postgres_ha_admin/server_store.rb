@@ -9,10 +9,10 @@ module PostgresHaAdmin
 
     TABLE_NAME = "repmgr.nodes".freeze
 
-    attr_reader :servers_file
+    attr_reader :servers
 
-    def initialize(servers_file)
-      @servers_file = servers_file
+    def initialize
+      @servers = []
     end
 
     def active_databases_conninfo_hash
@@ -23,12 +23,15 @@ module PostgresHaAdmin
     end
 
     def active_databases
-      all_databases.select { |record| record[:active] }
+      servers.select { |record| record[:active] }
     end
 
     def update_failover_yml(connection)
-      arr_yml = query_repmgr(connection)
-      File.write(servers_file, arr_yml.to_yaml) unless arr_yml.empty?
+      new_servers = query_repmgr(connection)
+      if servers_changed?(new_servers)
+        logger.info("Updating servers cache to #{new_servers}")
+        @servers = new_servers
+      end
     rescue IOError => err
       logger.error("#{err.class}: #{err}")
       logger.error(err.backtrace.join("\n"))
@@ -44,6 +47,10 @@ module PostgresHaAdmin
     end
 
     private
+
+    def servers_changed?(new_servers)
+      ((servers - new_servers) + (new_servers - servers)).any?
+    end
 
     def query_repmgr(connection)
       return [] unless table_exists?(connection, TABLE_NAME)
@@ -63,11 +70,6 @@ module PostgresHaAdmin
 
     def entry_is_active_master?(record)
       record[:type] == 'primary' && record[:active]
-    end
-
-    def all_databases
-      return [] unless File.exist?(servers_file)
-      YAML.load_file(servers_file)
     end
 
     def table_exists?(connection, table_name)

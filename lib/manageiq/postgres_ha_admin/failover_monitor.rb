@@ -17,11 +17,10 @@ module PostgresHaAdmin
     attr_accessor :failover_attempts, :db_check_frequency, :failover_check_frequency
 
     def initialize(db_yml_file: '/var/www/miq/vmdb/config/database.yml',
-                   failover_yml_file: '/var/www/miq/vmdb/config/failover_databases.yml',
                    ha_admin_yml_file: '/var/www/miq/vmdb/config/ha_admin.yml',
                    environment: 'production')
       @database_yml = RailsConfigHandler.new(:file_path => db_yml_file, :environment => environment)
-      @server_store = ServerStore.new(failover_yml_file)
+      @server_store = ServerStore.new
       initialize_settings(ha_admin_yml_file)
     end
 

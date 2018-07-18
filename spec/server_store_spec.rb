@@ -1,21 +1,12 @@
 describe ManageIQ::PostgresHaAdmin::ServerStore do
-  describe "#active_databases_conninfo_hash" do
-    it "returns a list of active databases connection info" do
+  describe "#connection_info_list" do
+    it "returns a list of database connection info" do
       expected = [
         {:host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
         {:host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'}
       ]
       subject.instance_variable_set(:@servers, initial_db_list)
-      expect(subject.active_databases_conninfo_hash).to contain_exactly(*expected)
-    end
-  end
-
-  describe "#active_databases" do
-    it "return list of active databases saved in 'config/failover_databases.yml'" do
-      subject.instance_variable_set(:@servers, initial_db_list)
-      expect(subject.active_databases).to contain_exactly(
-        {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
-        {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'})
+      expect(subject.connection_info_list).to contain_exactly(*expected)
     end
   end
 
@@ -56,45 +47,43 @@ describe ManageIQ::PostgresHaAdmin::ServerStore do
       SQL
     end
 
-    describe "#update_failover_yml" do
+    describe "#update_servers" do
       it "updates the servers list" do
-        subject.update_failover_yml(@connection)
+        subject.update_servers(@connection)
 
         expect(subject.servers).to eq initial_db_list
 
         add_new_record
 
-        subject.update_failover_yml(@connection)
+        subject.update_servers(@connection)
         expect(subject.servers).to eq new_db_list
       end
     end
 
-    describe "#host_is_repmgr_primary?" do
+    describe "#host_is_primary?" do
       it "return true if supplied connection established with primary database" do
-        expect(subject.host_is_repmgr_primary?('203.0.113.1', @connection)).to be true
+        expect(subject.host_is_primary?('203.0.113.1', @connection)).to be true
       end
 
       it "return false if supplied connection established with not active standby database" do
-        expect(subject.host_is_repmgr_primary?('203.0.113.3', @connection)).to be false
+        expect(subject.host_is_primary?('203.0.113.3', @connection)).to be false
       end
 
       it "return false if supplied connection established with active standby database" do
-        expect(subject.host_is_repmgr_primary?('203.0.113.2', @connection)).to be false
+        expect(subject.host_is_primary?('203.0.113.2', @connection)).to be false
       end
 
       it "return false if supplied connection established with not active primary database" do
-        expect(subject.host_is_repmgr_primary?('203.0.113.5', @connection)).to be false
+        expect(subject.host_is_primary?('203.0.113.5', @connection)).to be false
       end
     end
   end
 
   def initial_db_list
-    arr = []
-    arr << {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'}
-    arr << {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'}
-    arr << {:type => 'standby', :active => false, :host => '203.0.113.3', :user => 'root', :dbname => 'vmdb_test'}
-    arr << {:type => 'primary', :active => false, :host => '203.0.113.5', :user => 'root', :dbname => 'vmdb_test'}
-    arr
+    [
+      {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
+      {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'}
+    ]
   end
 
   def new_db_list

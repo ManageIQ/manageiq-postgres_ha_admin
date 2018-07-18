@@ -27,7 +27,7 @@ module PostgresHaAdmin
     def monitor
       connection = pg_connection(@database_yml.read)
       if connection
-        @server_store.update_failover_yml(connection)
+        @server_store.update_servers(connection)
         connection.finish
         return
       end
@@ -57,7 +57,7 @@ module PostgresHaAdmin
 
     def active_servers_conninfo
       db_yml_params = @database_yml.read
-      servers = @server_store.active_databases_conninfo_hash
+      servers = @server_store.connection_info_list
       servers.map! { |info| db_yml_params.merge(info) }
     end
 
@@ -88,9 +88,9 @@ module PostgresHaAdmin
       failover_attempts.times do
         with_each_standby_connection do |connection, params|
           next if database_in_recovery?(connection)
-          next unless @server_store.host_is_repmgr_primary?(params[:host], connection)
+          next unless @server_store.host_is_primary?(params[:host], connection)
           logger.info("Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
-          @server_store.update_failover_yml(connection)
+          @server_store.update_servers(connection)
           @database_yml.write(params)
           return true
         end

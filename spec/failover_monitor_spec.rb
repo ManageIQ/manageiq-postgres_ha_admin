@@ -1,27 +1,23 @@
 require 'util/postgres_admin'
 
 describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
-  let(:config_handler) { double('ConfigHandler') }
-  let(:server_store)   { double('ServerStore') }
+  let(:config_handler)  { double('ConfigHandler', :name => "Test config handler") }
+  let(:config_handler2) { double('ConfigHandler2', :name => "Other config handler") }
+  let(:server_store)    { double('ServerStore') }
+  let(:server_store2)   { double('ServerStore2') }
+
+  before do
+    allow(ManageIQ::PostgresHaAdmin::ServerStore).to receive(:new).and_return(server_store, server_store2)
+  end
 
   let(:connection) do
     conn = double("PGConnection")
     allow(conn).to receive(:finish)
     conn
   end
-  let(:failover_monitor) do
-    expect(ManageIQ::PostgresHaAdmin::RailsConfigHandler).to receive(:new).and_return(config_handler)
-    expect(ManageIQ::PostgresHaAdmin::ServerStore).to receive(:new).and_return(server_store)
-    described_class.new
-  end
-  let(:linux_admin) do
-    linux_adm = double('LinuxAdmin')
-    allow(LinuxAdmin::Service).to receive(:new).and_return(linux_adm)
-    linux_adm
-  end
 
   describe "#initialize" do
-    it "override default failover settings with settings loaded from 'ha_admin.yml'" do
+    it "override default failover settings with settings loaded from provided config file" do
       ha_admin_yml_file = Tempfile.new('ha_admin.yml')
       yml_data = YAML.load(<<-DOC)
 ---
@@ -29,7 +25,7 @@ failover_attempts: 20
       DOC
 
       File.write(ha_admin_yml_file.path, yml_data.to_yaml)
-      monitor_with_settings = described_class.new(:ha_admin_yml_file => ha_admin_yml_file.path)
+      monitor_with_settings = described_class.new(ha_admin_yml_file.path)
       ha_admin_yml_file.close(true)
 
       expect(described_class::FAILOVER_ATTEMPTS).not_to eq 20
@@ -37,10 +33,10 @@ failover_attempts: 20
       expect(monitor_with_settings.db_check_frequency).to eq described_class::DB_CHECK_FREQUENCY
     end
 
-    it "uses default failover settings if 'ha_admin.yml' not found" do
-      expect(failover_monitor.failover_attempts).to eq described_class::FAILOVER_ATTEMPTS
-      expect(failover_monitor.db_check_frequency).to eq described_class::DB_CHECK_FREQUENCY
-      expect(failover_monitor.failover_check_frequency).to eq described_class::FAILOVER_CHECK_FREQUENCY
+    it "uses default failover settings if config file is not provided" do
+      expect(subject.failover_attempts).to eq described_class::FAILOVER_ATTEMPTS
+      expect(subject.db_check_frequency).to eq described_class::DB_CHECK_FREQUENCY
+      expect(subject.failover_check_frequency).to eq described_class::FAILOVER_CHECK_FREQUENCY
     end
   end
 
@@ -52,6 +48,7 @@ failover_attempts: 20
         :password => 'password'
       }
       allow(config_handler).to receive(:read).and_return(params)
+      subject.add_handler(config_handler)
     end
 
     context "primary database is accessable" do
@@ -59,18 +56,35 @@ failover_attempts: 20
         allow(PG::Connection).to receive(:open).and_return(connection)
       end
 
-      it "updates 'failover_databases.yml'" do
+      it "updates server store" do
         expect(server_store).to receive(:update_servers)
-        failover_monitor.monitor
+        subject.monitor
       end
 
-      it "does not stop evm server and does not execute failover" do
-        expect(server_store).to receive(:update_servers)
-        expect(linux_admin).not_to receive(:stop)
-        expect(linux_admin).not_to receive(:restart)
-        expect(failover_monitor).not_to receive(:execute_failover)
+      it "monitors multiple handlers" do
+        subject.add_handler(config_handler2)
 
-        failover_monitor.monitor
+        expect(server_store).to receive(:update_servers)
+        expect(server_store2).to receive(:update_servers)
+        expect(config_handler2).to receive(:read).and_return(:host => "other.example.com", :user => "me", :password => "notpassword")
+        subject.monitor
+      end
+
+      it "monitors multiple handlers even if one raises" do
+        subject.add_handler(config_handler2)
+
+        expect(server_store).to receive(:update_servers).and_raise(RuntimeError)
+        expect(server_store2).to receive(:update_servers)
+        expect(config_handler2).to receive(:read).and_return(:host => "other.example.com", :user => "me", :password => "notpassword")
+        subject.monitor
+      end
+
+      it "does not execute before failover callback and does not execute failover" do
+        expect(server_store).to receive(:update_servers)
+        expect(subject).not_to receive(:execute_failover)
+        expect(config_handler).not_to receive(:do_before_failover)
+
+        subject.monitor
       end
     end
 
@@ -80,37 +94,36 @@ failover_attempts: 20
         stub_monitor_constants
       end
 
-      it "stop evm server(if it is running) before failover attempt" do
-        expect(linux_admin).to receive(:stop).ordered
-        expect(failover_monitor).to receive(:execute_failover).ordered
-        failover_monitor.monitor
+      it "calls the before failover callback before failover attempt" do
+        expect(config_handler).to receive(:do_before_failover).ordered
+        expect(subject).to receive(:execute_failover).ordered
+        subject.monitor
       end
 
-      it "does not update 'database.yml' and 'failover_databases.yml' if all standby DBs are in recovery mode" do
+      it "does not update config handler and server store if all standby DBs are in recovery mode" do
         failover_not_executed
-        expect(failover_monitor).to receive(:database_in_recovery?).and_return(true, true, true).ordered
-        failover_monitor.monitor
+        expect(subject).to receive(:database_in_recovery?).and_return(true, true, true).ordered
+        subject.monitor
       end
 
-      it "does not update 'database.yml' and 'failover_databases.yml' if there is no master database avaiable" do
+      it "does not update config handler and server store if there is no master database avaiable" do
         failover_not_executed
-        expect(failover_monitor).to receive(:database_in_recovery?).and_return(false, false, false).ordered
+        expect(subject).to receive(:database_in_recovery?).and_return(false, false, false).ordered
         expect(server_store).to receive(:host_is_primary?).and_return(false, false, false).ordered
-        failover_monitor.monitor
+        subject.monitor
       end
 
-      it "updates 'database.yml' and 'failover_databases.yml' and restart evm server if new primary db available" do
+      it "updates config handler and server store and runs callbacks if new primary db available" do
         failover_executed
-        expect(failover_monitor).to receive(:raise_failover_event)
-        expect(failover_monitor).to receive(:database_in_recovery?).and_return(false)
+        expect(subject).to receive(:database_in_recovery?).and_return(false)
         expect(server_store).to receive(:host_is_primary?).and_return(true)
-        failover_monitor.monitor
+        subject.monitor
       end
     end
   end
 
   describe "#active_servers_conninfo" do
-    it "merges settings from database yml and failover yml" do
+    it "merges settings from config handler and server store" do
       active_servers_conninfo = [
         {:host => 'failover_host.example.com'},
         {:host => 'failover_host2.example.com'}
@@ -122,39 +135,29 @@ failover_attempts: 20
       settings_from_config_handler = {:host => 'host.example.com', :password => 'mypassword'}
       expect(server_store).to receive(:connection_info_list).and_return(active_servers_conninfo)
       expect(config_handler).to receive(:read).and_return(settings_from_config_handler)
-      expect(failover_monitor.active_servers_conninfo).to match_array(expected_conninfo)
-    end
-  end
-
-  describe "#raise_failover_event" do
-    it "invoke 'evm:raise_server_event' rake task" do
-      expect(AwesomeSpawn).to receive(:run).with(
-        "rake evm:raise_server_event",
-        :chdir  => described_class::RAILS_ROOT,
-        :params => ["--", {:event  => "db_failover_executed"}])
-      failover_monitor.raise_failover_event
+      expect(subject.active_servers_conninfo(config_handler, server_store)).to match_array(expected_conninfo)
     end
   end
 
   def failover_executed
-    expect(linux_admin).to receive(:stop)
+    expect(config_handler).to receive(:do_before_failover)
     expect(server_store).to receive(:connection_info_list).and_return(active_databases_conninfo)
     expect(server_store).to receive(:update_servers)
     expect(config_handler).to receive(:write)
-    expect(linux_admin).to receive(:restart)
+    expect(config_handler).to receive(:do_after_failover)
   end
 
   def failover_not_executed
-    expect(linux_admin).to receive(:stop)
+    expect(config_handler).to receive(:do_before_failover)
     expect(server_store).to receive(:connection_info_list).and_return(active_databases_conninfo)
     expect(server_store).not_to receive(:update_servers)
     expect(config_handler).not_to receive(:write)
-    expect(linux_admin).not_to receive(:restart)
+    expect(config_handler).not_to receive(:do_after_failover)
   end
 
   def stub_monitor_constants
-    stub_const("ManageIQ::PostgresHaAdmin::FailoverMonitor::FAILOVER_ATTEMPTS", 1)
-    stub_const("ManageIQ::PostgresHaAdmin::FailoverMonitor::FAILOVER_CHECK_FREQUENCY", 1)
+    subject.instance_variable_set(:@failover_attempts, 1)
+    subject.instance_variable_set(:@failover_check_frequency, 0)
   end
 
   def active_databases_conninfo
@@ -176,7 +179,7 @@ failover_attempts: 20
       end
 
       it "returns false if postgres database not in recovery mode" do
-        expect(failover_monitor.send(:database_in_recovery?, @connection)).to be false
+        expect(subject.send(:database_in_recovery?, @connection)).to be false
       end
     end
   end

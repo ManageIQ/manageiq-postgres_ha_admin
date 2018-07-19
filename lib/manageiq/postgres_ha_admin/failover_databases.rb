@@ -5,13 +5,14 @@ require 'pg/dsn_parser'
 module ManageIQ
 module PostgresHaAdmin
   class FailoverDatabases
+    include Logging
+
     TABLE_NAME = "repmgr.nodes".freeze
 
     attr_reader :yml_file
 
-    def initialize(yml_file, logger)
+    def initialize(yml_file)
       @yml_file = yml_file
-      @logger = logger
     end
 
     def active_databases_conninfo_hash
@@ -29,8 +30,8 @@ module PostgresHaAdmin
       arr_yml = query_repmgr(connection)
       File.write(yml_file, arr_yml.to_yaml) unless arr_yml.empty?
     rescue IOError => err
-      @logger.error("#{err.class}: #{err}")
-      @logger.error(err.backtrace.join("\n"))
+      logger.error("#{err.class}: #{err}")
+      logger.error(err.backtrace.join("\n"))
     end
 
     def host_is_repmgr_primary?(host, connection)
@@ -55,8 +56,8 @@ module PostgresHaAdmin
       db_result.clear
       result
     rescue PG::Error => err
-      @logger.error("#{err.class}: #{err}")
-      @logger.error(err.backtrace.join("\n"))
+      logger.error("#{err.class}: #{err}")
+      logger.error(err.backtrace.join("\n"))
       result
     end
 

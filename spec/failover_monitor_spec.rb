@@ -9,16 +9,10 @@ describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
     allow(conn).to receive(:finish)
     conn
   end
-  let(:logger) do
-    logger = double('Logger')
-    allow(logger).to receive_messages(:error => 'any', :info => 'any')
-    logger
-  end
   let(:failover_monitor) do
     expect(ManageIQ::PostgresHaAdmin::DatabaseYml).to receive(:new).and_return(db_yml)
     expect(ManageIQ::PostgresHaAdmin::FailoverDatabases).to receive(:new).and_return(failover_db)
-    failover_instance = described_class.new(:logger => logger)
-    failover_instance
+    described_class.new
   end
   let(:linux_admin) do
     linux_adm = double('LinuxAdmin')
@@ -35,8 +29,7 @@ failover_attempts: 20
       DOC
 
       File.write(ha_admin_yml_file.path, yml_data.to_yaml)
-      monitor_with_settings = described_class.new(:ha_admin_yml_file => ha_admin_yml_file.path,
-                                                  :logger            => logger)
+      monitor_with_settings = described_class.new(:ha_admin_yml_file => ha_admin_yml_file.path)
       ha_admin_yml_file.close(true)
 
       expect(described_class::FAILOVER_ATTEMPTS).not_to eq 20

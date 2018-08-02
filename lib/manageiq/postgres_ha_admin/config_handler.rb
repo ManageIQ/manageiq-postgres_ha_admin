@@ -24,17 +24,11 @@ module PostgresHaAdmin
     end
 
     def do_before_failover
-      do_callback(@before_failover_cb)
+      @before_failover_cb&.call
     end
 
-    def do_after_failover
-      do_callback(@after_failover_cb)
-    end
-
-    private
-
-    def do_callback(cb)
-      cb&.call
+    def do_after_failover(new_primary_conn_info)
+      @after_failover_cb&.call(new_primary_conn_info)
     end
   end
 end

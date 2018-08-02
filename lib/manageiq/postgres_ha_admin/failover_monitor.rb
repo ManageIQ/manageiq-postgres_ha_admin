@@ -34,8 +34,9 @@ module PostgresHaAdmin
           logger.error("Primary Database is not available for #{handler.name}. Starting to execute failover...")
           handler.do_before_failover
 
-          if execute_failover(handler, server_store)
-            handler.do_after_failover
+          new_conn_info = execute_failover(handler, server_store)
+          if new_conn_info
+            handler.do_after_failover(new_conn_info)
           else
             logger.error("Failover failed")
           end
@@ -88,7 +89,7 @@ module PostgresHaAdmin
           logger.info("Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
           server_store.update_servers(connection)
           handler.write(params)
-          return true
+          return params
         end
         sleep(failover_check_frequency)
       end

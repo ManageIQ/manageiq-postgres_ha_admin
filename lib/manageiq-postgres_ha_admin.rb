@@ -8,6 +8,7 @@ require 'manageiq/postgres_ha_admin/failover_monitor'
 
 require 'manageiq/postgres_ha_admin/config_handler'
 require 'manageiq/postgres_ha_admin/config_handler/rails_config_handler'
+require 'manageiq/postgres_ha_admin/config_handler/pglogical_config_handler'
 
 module ManageIQ
   module PostgresHaAdmin

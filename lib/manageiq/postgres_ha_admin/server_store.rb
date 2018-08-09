@@ -4,39 +4,38 @@ require 'pg/dsn_parser'
 
 module ManageIQ
 module PostgresHaAdmin
-  class FailoverDatabases
+  class ServerStore
     include Logging
 
     TABLE_NAME = "repmgr.nodes".freeze
 
-    attr_reader :yml_file
+    attr_reader :servers
 
-    def initialize(yml_file)
-      @yml_file = yml_file
+    def initialize
+      @servers = []
     end
 
-    def active_databases_conninfo_hash
+    def connection_info_list
       valid_keys = PG::Connection.conndefaults_hash.keys + [:requiressl]
-      active_databases.map! do |db_info|
+      servers.map! do |db_info|
         db_info.keep_if { |k, _v| valid_keys.include?(k) }
       end
     end
 
-    def active_databases
-      all_databases.select { |record| record[:active] }
-    end
-
-    def update_failover_yml(connection)
-      arr_yml = query_repmgr(connection)
-      File.write(yml_file, arr_yml.to_yaml) unless arr_yml.empty?
+    def update_servers(connection)
+      new_servers = query_repmgr(connection)
+      if servers_changed?(new_servers)
+        logger.info("Updating servers cache to #{new_servers}")
+        @servers = new_servers
+      end
     rescue IOError => err
       logger.error("#{err.class}: #{err}")
       logger.error(err.backtrace.join("\n"))
     end
 
-    def host_is_repmgr_primary?(host, connection)
+    def host_is_primary?(host, connection)
       query_repmgr(connection).each do |record|
-        if record[:host] == host && entry_is_active_master?(record)
+        if record[:host] == host && record[:type] == 'primary'
           return true
         end
       end
@@ -45,10 +44,14 @@ module PostgresHaAdmin
 
     private
 
+    def servers_changed?(new_servers)
+      ((servers - new_servers) + (new_servers - servers)).any?
+    end
+
     def query_repmgr(connection)
       return [] unless table_exists?(connection, TABLE_NAME)
       result = []
-      db_result = connection.exec("SELECT type, conninfo, active FROM #{TABLE_NAME}")
+      db_result = connection.exec("SELECT type, conninfo, active FROM #{TABLE_NAME} WHERE active")
       db_result.map_types!(PG::BasicTypeMapForResults.new(connection)).each do |record|
         dsn = PG::DSNParser.parse(record.delete("conninfo"))
         result << record.symbolize_keys.merge(dsn)
@@ -59,15 +62,6 @@ module PostgresHaAdmin
       logger.error("#{err.class}: #{err}")
       logger.error(err.backtrace.join("\n"))
       result
-    end
-
-    def entry_is_active_master?(record)
-      record[:type] == 'primary' && record[:active]
-    end
-
-    def all_databases
-      return [] unless File.exist?(yml_file)
-      YAML.load_file(yml_file)
     end
 
     def table_exists?(connection, table_name)

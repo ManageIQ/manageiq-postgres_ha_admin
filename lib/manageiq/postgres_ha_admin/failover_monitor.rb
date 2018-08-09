@@ -17,18 +17,17 @@ module PostgresHaAdmin
     attr_accessor :failover_attempts, :db_check_frequency, :failover_check_frequency
 
     def initialize(db_yml_file: '/var/www/miq/vmdb/config/database.yml',
-                   failover_yml_file: '/var/www/miq/vmdb/config/failover_databases.yml',
                    ha_admin_yml_file: '/var/www/miq/vmdb/config/ha_admin.yml',
                    environment: 'production')
       @database_yml = RailsConfigHandler.new(:file_path => db_yml_file, :environment => environment)
-      @failover_db = FailoverDatabases.new(failover_yml_file)
+      @server_store = ServerStore.new
       initialize_settings(ha_admin_yml_file)
     end
 
     def monitor
       connection = pg_connection(@database_yml.read)
       if connection
-        @failover_db.update_failover_yml(connection)
+        @server_store.update_servers(connection)
         connection.finish
         return
       end
@@ -57,8 +56,8 @@ module PostgresHaAdmin
     end
 
     def active_servers_conninfo
-      servers = @failover_db.active_databases_conninfo_hash
       db_yml_params = @database_yml.read
+      servers = @server_store.connection_info_list
       servers.map! { |info| db_yml_params.merge(info) }
     end
 
@@ -89,9 +88,9 @@ module PostgresHaAdmin
       failover_attempts.times do
         with_each_standby_connection do |connection, params|
           next if database_in_recovery?(connection)
-          next unless @failover_db.host_is_repmgr_primary?(params[:host], connection)
+          next unless @server_store.host_is_primary?(params[:host], connection)
           logger.info("Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
-          @failover_db.update_failover_yml(connection)
+          @server_store.update_servers(connection)
           @database_yml.write(params)
           return true
         end

@@ -2,7 +2,7 @@ require 'util/postgres_admin'
 
 describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
   let(:config_handler) { double('ConfigHandler') }
-  let(:failover_db)    { double('FailoverDatabases') }
+  let(:server_store)   { double('ServerStore') }
 
   let(:connection) do
     conn = double("PGConnection")
@@ -11,7 +11,7 @@ describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
   end
   let(:failover_monitor) do
     expect(ManageIQ::PostgresHaAdmin::RailsConfigHandler).to receive(:new).and_return(config_handler)
-    expect(ManageIQ::PostgresHaAdmin::FailoverDatabases).to receive(:new).and_return(failover_db)
+    expect(ManageIQ::PostgresHaAdmin::ServerStore).to receive(:new).and_return(server_store)
     described_class.new
   end
   let(:linux_admin) do
@@ -60,12 +60,12 @@ failover_attempts: 20
       end
 
       it "updates 'failover_databases.yml'" do
-        expect(failover_db).to receive(:update_failover_yml)
+        expect(server_store).to receive(:update_servers)
         failover_monitor.monitor
       end
 
       it "does not stop evm server and does not execute failover" do
-        expect(failover_db).to receive(:update_failover_yml)
+        expect(server_store).to receive(:update_servers)
         expect(linux_admin).not_to receive(:stop)
         expect(linux_admin).not_to receive(:restart)
         expect(failover_monitor).not_to receive(:execute_failover)
@@ -95,7 +95,7 @@ failover_attempts: 20
       it "does not update 'database.yml' and 'failover_databases.yml' if there is no master database avaiable" do
         failover_not_executed
         expect(failover_monitor).to receive(:database_in_recovery?).and_return(false, false, false).ordered
-        expect(failover_db).to receive(:host_is_repmgr_primary?).and_return(false, false, false).ordered
+        expect(server_store).to receive(:host_is_primary?).and_return(false, false, false).ordered
         failover_monitor.monitor
       end
 
@@ -103,7 +103,7 @@ failover_attempts: 20
         failover_executed
         expect(failover_monitor).to receive(:raise_failover_event)
         expect(failover_monitor).to receive(:database_in_recovery?).and_return(false)
-        expect(failover_db).to receive(:host_is_repmgr_primary?).and_return(true)
+        expect(server_store).to receive(:host_is_primary?).and_return(true)
         failover_monitor.monitor
       end
     end
@@ -120,7 +120,7 @@ failover_attempts: 20
         {:host => 'failover_host2.example.com', :password => 'mypassword'}
       ]
       settings_from_config_handler = {:host => 'host.example.com', :password => 'mypassword'}
-      expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_servers_conninfo)
+      expect(server_store).to receive(:connection_info_list).and_return(active_servers_conninfo)
       expect(config_handler).to receive(:read).and_return(settings_from_config_handler)
       expect(failover_monitor.active_servers_conninfo).to match_array(expected_conninfo)
     end
@@ -138,16 +138,16 @@ failover_attempts: 20
 
   def failover_executed
     expect(linux_admin).to receive(:stop)
-    expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_databases_conninfo)
-    expect(failover_db).to receive(:update_failover_yml)
+    expect(server_store).to receive(:connection_info_list).and_return(active_databases_conninfo)
+    expect(server_store).to receive(:update_servers)
     expect(config_handler).to receive(:write)
     expect(linux_admin).to receive(:restart)
   end
 
   def failover_not_executed
     expect(linux_admin).to receive(:stop)
-    expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_databases_conninfo)
-    expect(failover_db).not_to receive(:update_failover_yml)
+    expect(server_store).to receive(:connection_info_list).and_return(active_databases_conninfo)
+    expect(server_store).not_to receive(:update_servers)
     expect(config_handler).not_to receive(:write)
     expect(linux_admin).not_to receive(:restart)
   end

@@ -1,5 +1,5 @@
-describe ManageIQ::PostgresHaAdmin::DatabaseYml do
-  let(:yml_utils) { described_class.new(@yml_file.path, 'test') }
+describe ManageIQ::PostgresHaAdmin::RailsConfigHandler do
+  subject { described_class.new(:file_path => @yml_file.path, :environment => 'test') }
 
   before do
     @yml_file = Tempfile.new('database.yml')
@@ -21,18 +21,24 @@ DOC
     @yml_file.close(true)
   end
 
-  describe "#pg_params_from_database_yml" do
+  describe "#name" do
+    it "identifies the config handler by environment" do
+      expect(subject.name).to eq("Rails test Config Handler")
+    end
+  end
+
+  describe "#read" do
     it "returns pg connection parameters based on 'database.yml'" do
-      params = yml_utils.pg_params_from_database_yml
+      params = subject.read
       expect(params).to eq(:dbname => 'vmdb_test', :user => 'user')
     end
   end
 
-  describe "#update_database_yml" do
+  describe "#write" do
     it "back-up existing 'database.yml'" do
       original_yml = YAML.load_file(@yml_file)
 
-      new_name = yml_utils.update_database_yml(:any => 'any')
+      new_name = subject.write(:any => 'any')
 
       expect(new_name.size).to be > @yml_file.path.size
       expect(YAML.load_file(new_name)).to eq original_yml
@@ -42,12 +48,12 @@ DOC
       original_yml = YAML.load_file(@yml_file)
       allow(File).to receive(:write).and_raise(StandardError)
 
-      expect { yml_utils.update_database_yml(:any => 'any') }.to raise_error(StandardError)
+      expect { subject.write(:any => 'any') }.to raise_error(StandardError)
       expect(YAML.load_file(@yml_file)).to eq original_yml
     end
 
     it "takes hash with 'pg style' parameters and override database.yml" do
-      yml_utils.update_database_yml(:dbname => 'some_db', :host => "localhost", :port => '')
+      subject.write(:dbname => 'some_db', :host => "localhost", :port => '')
       yml = YAML.load_file(@yml_file)
 
       expect(yml['test']).to eq('database' => 'some_db', 'host' => 'localhost',

@@ -1,8 +1,8 @@
 require 'util/postgres_admin'
 
 describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
-  let(:db_yml)      { double('DatabaseYml') }
-  let(:failover_db) { double('FailoverDatabases') }
+  let(:config_handler) { double('ConfigHandler') }
+  let(:failover_db)    { double('FailoverDatabases') }
 
   let(:connection) do
     conn = double("PGConnection")
@@ -10,7 +10,7 @@ describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
     conn
   end
   let(:failover_monitor) do
-    expect(ManageIQ::PostgresHaAdmin::DatabaseYml).to receive(:new).and_return(db_yml)
+    expect(ManageIQ::PostgresHaAdmin::RailsConfigHandler).to receive(:new).and_return(config_handler)
     expect(ManageIQ::PostgresHaAdmin::FailoverDatabases).to receive(:new).and_return(failover_db)
     described_class.new
   end
@@ -51,7 +51,7 @@ failover_attempts: 20
         :user     => 'root',
         :password => 'password'
       }
-      allow(db_yml).to receive(:pg_params_from_database_yml).and_return(params)
+      allow(config_handler).to receive(:read).and_return(params)
     end
 
     context "primary database is accessable" do
@@ -119,9 +119,9 @@ failover_attempts: 20
         {:host => 'failover_host.example.com', :password => 'mypassword'},
         {:host => 'failover_host2.example.com', :password => 'mypassword'}
       ]
-      settings_from_db_yml = {:host => 'host.example.com', :password => 'mypassword'}
+      settings_from_config_handler = {:host => 'host.example.com', :password => 'mypassword'}
       expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_servers_conninfo)
-      expect(db_yml).to receive(:pg_params_from_database_yml).and_return(settings_from_db_yml)
+      expect(config_handler).to receive(:read).and_return(settings_from_config_handler)
       expect(failover_monitor.active_servers_conninfo).to match_array(expected_conninfo)
     end
   end
@@ -140,7 +140,7 @@ failover_attempts: 20
     expect(linux_admin).to receive(:stop)
     expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_databases_conninfo)
     expect(failover_db).to receive(:update_failover_yml)
-    expect(db_yml).to receive(:update_database_yml)
+    expect(config_handler).to receive(:write)
     expect(linux_admin).to receive(:restart)
   end
 
@@ -148,7 +148,7 @@ failover_attempts: 20
     expect(linux_admin).to receive(:stop)
     expect(failover_db).to receive(:active_databases_conninfo_hash).and_return(active_databases_conninfo)
     expect(failover_db).not_to receive(:update_failover_yml)
-    expect(db_yml).not_to receive(:update_database_yml)
+    expect(config_handler).not_to receive(:write)
     expect(linux_admin).not_to receive(:restart)
   end
 

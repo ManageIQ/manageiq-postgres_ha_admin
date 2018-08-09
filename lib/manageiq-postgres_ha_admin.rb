@@ -3,9 +3,11 @@ require 'manageiq/postgres_ha_admin/version'
 require 'manageiq/postgres_ha_admin/logging'
 require 'manageiq/postgres_ha_admin/null_logger'
 
-require 'manageiq/postgres_ha_admin/database_yml'
 require 'manageiq/postgres_ha_admin/failover_databases'
 require 'manageiq/postgres_ha_admin/failover_monitor'
+
+require 'manageiq/postgres_ha_admin/config_handler'
+require 'manageiq/postgres_ha_admin/config_handler/rails_config_handler'
 
 module ManageIQ
   module PostgresHaAdmin

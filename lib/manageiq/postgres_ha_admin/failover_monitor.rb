@@ -11,18 +11,19 @@ module PostgresHaAdmin
     DB_CHECK_FREQUENCY = 300
     FAILOVER_CHECK_FREQUENCY = 60
     attr_accessor :failover_attempts, :db_check_frequency, :failover_check_frequency
+    attr_reader :config_handlers
 
     def initialize(config_path = "")
       initialize_settings(config_path)
+      @config_handlers = []
     end
 
     def add_handler(handler)
-      @config_handlers ||= []
       @config_handlers << [handler, ServerStore.new]
     end
 
     def monitor
-      @config_handlers.each do |handler, server_store|
+      config_handlers.each do |handler, server_store|
         begin
           connection = pg_connection(handler.read)
           if connection

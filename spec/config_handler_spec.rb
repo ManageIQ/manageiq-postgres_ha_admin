@@ -30,18 +30,18 @@ describe ManageIQ::PostgresHaAdmin::ConfigHandler do
 
   describe "#do_after_failover" do
     it "runs with no callback registered" do
-      subject.do_after_failover
+      subject.do_after_failover(:host => "db.example.com")
     end
 
     it "calls the registered failover" do
       after_failover_obj = double("after_failover_object")
 
-      subject.after_failover do
-        after_failover_obj.after_failover_things
+      subject.after_failover do |new_conninfo|
+        after_failover_obj.after_failover_things(new_conninfo)
       end
 
-      expect(after_failover_obj).to receive(:after_failover_things)
-      subject.do_after_failover
+      expect(after_failover_obj).to receive(:after_failover_things).with(:host => "db.example.com")
+      subject.do_after_failover(:host => "db.example.com")
     end
   end
 end

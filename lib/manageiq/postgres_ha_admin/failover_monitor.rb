@@ -7,39 +7,44 @@ module PostgresHaAdmin
   class FailoverMonitor
     include Logging
 
-    RAILS_ROOT = [
-      Pathname.new("/var/www/miq/vmdb"),
-      Pathname.new(File.expand_path(File.join(__dir__, "../..")))
-    ].detect { |f| File.exist?(f) }
     FAILOVER_ATTEMPTS = 10
     DB_CHECK_FREQUENCY = 300
     FAILOVER_CHECK_FREQUENCY = 60
     attr_accessor :failover_attempts, :db_check_frequency, :failover_check_frequency
+    attr_reader :config_handlers
 
-    def initialize(db_yml_file: '/var/www/miq/vmdb/config/database.yml',
-                   ha_admin_yml_file: '/var/www/miq/vmdb/config/ha_admin.yml',
-                   environment: 'production')
-      @database_yml = RailsConfigHandler.new(:file_path => db_yml_file, :environment => environment)
-      @server_store = ServerStore.new
-      initialize_settings(ha_admin_yml_file)
+    def initialize(config_path = "")
+      initialize_settings(config_path)
+      @config_handlers = []
+    end
+
+    def add_handler(handler)
+      @config_handlers << [handler, ServerStore.new]
     end
 
     def monitor
-      connection = pg_connection(@database_yml.read)
-      if connection
-        @server_store.update_servers(connection)
-        connection.finish
-        return
-      end
+      config_handlers.each do |handler, server_store|
+        begin
+          connection = pg_connection(handler.read)
+          if connection
+            server_store.update_servers(connection)
+            connection.finish
+            next
+          end
 
-      logger.error("Primary Database is not available. EVM server stop initiated. Starting to execute failover...")
-      stop_evmserverd
+          logger.error("Primary Database is not available for #{handler.name}. Starting to execute failover...")
+          handler.do_before_failover
 
-      if execute_failover
-        start_evmserverd
-        raise_failover_event
-      else
-        logger.error("Failover failed")
+          new_conn_info = execute_failover(handler, server_store)
+          if new_conn_info
+            handler.do_after_failover(new_conn_info)
+          else
+            logger.error("Failover failed")
+          end
+        rescue => e
+          logger.error("Received #{e.class} error while monitoring #{handler.name}: #{e.message}")
+          logger.error(e.backtrace)
+        end
       end
     end
 
@@ -55,26 +60,19 @@ module PostgresHaAdmin
       end
     end
 
-    def active_servers_conninfo
-      db_yml_params = @database_yml.read
-      servers = @server_store.connection_info_list
-      servers.map! { |info| db_yml_params.merge(info) }
-    end
-
-    def raise_failover_event
-      require "awesome_spawn"
-      AwesomeSpawn.run("rake evm:raise_server_event",
-                       :chdir  => RAILS_ROOT,
-                       :params => ["--", {:event  => "db_failover_executed"}])
+    def active_servers_conninfo(handler, server_store)
+      servers = server_store.connection_info_list
+      current_params = handler.read
+      servers.map! { |info| current_params.merge(info) }
     end
 
     private
 
     def initialize_settings(ha_admin_yml_file)
+      ha_admin_yml = {}
       begin
-        ha_admin_yml = YAML.load_file(ha_admin_yml_file)
+        ha_admin_yml = YAML.load_file(ha_admin_yml_file) if File.exist?(ha_admin_yml_file)
       rescue SystemCallError, IOError => err
-        ha_admin_yml = {}
         logger.error("#{err.class}: #{err}")
         logger.info("File not loaded: #{ha_admin_yml_file}. Default settings for failover will be used.")
       end
@@ -84,23 +82,23 @@ module PostgresHaAdmin
       logger.info("FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
     end
 
-    def execute_failover
+    def execute_failover(handler, server_store)
       failover_attempts.times do
-        with_each_standby_connection do |connection, params|
+        with_each_standby_connection(handler, server_store) do |connection, params|
           next if database_in_recovery?(connection)
-          next unless @server_store.host_is_primary?(params[:host], connection)
+          next unless server_store.host_is_primary?(params[:host], connection)
           logger.info("Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
-          @server_store.update_servers(connection)
-          @database_yml.write(params)
-          return true
+          server_store.update_servers(connection)
+          handler.write(params)
+          return params
         end
         sleep(failover_check_frequency)
       end
       false
     end
 
-    def with_each_standby_connection
-      active_servers_conninfo.each do |params|
+    def with_each_standby_connection(handler, server_store)
+      active_servers_conninfo(handler, server_store).each do |params|
         connection = pg_connection(params)
         next if connection.nil?
         begin
@@ -116,15 +114,6 @@ module PostgresHaAdmin
     rescue PG::Error => e
       logger.error("Failed to establish PG connection: #{e.message}")
       nil
-    end
-
-    def start_evmserverd
-      LinuxAdmin::Service.new("evmserverd").restart
-      logger.info("Starting EVM server from failover monitor")
-    end
-
-    def stop_evmserverd
-      LinuxAdmin::Service.new("evmserverd").stop
     end
 
     # Checks if postgres database is in recovery mode

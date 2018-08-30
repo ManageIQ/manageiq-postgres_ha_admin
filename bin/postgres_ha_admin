@@ -1,7 +1,0 @@
-#!/bin/env ruby
-
-require 'bundler/setup'
-require 'manageiq-postgres_ha_admin'
-
-monitor = ManageIQ::PostgresHaAdmin::FailoverMonitor.new
-monitor.monitor_loop

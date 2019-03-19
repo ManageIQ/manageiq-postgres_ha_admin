@@ -1,5 +1,5 @@
 require 'active_support/all'
-require 'util/miq-password'
+require 'manageiq-password'
 require 'fileutils'
 
 module ManageIQ
@@ -44,7 +44,7 @@ module PostgresHaAdmin
       pg_params[:user] = params['username']
       pg_params[:port] = params['port']
       pg_params[:host] = params['host']
-      pg_params[:password] = MiqPassword.try_decrypt(params['password'])
+      pg_params[:password] = ManageIQ::Password.try_decrypt(params['password'])
       remove_empty(pg_params)
     end
 

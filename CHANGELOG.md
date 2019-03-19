@@ -3,7 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [3.0.1] - 2019-03-19
+
+### Changed
+- Remove references to MiqPassword [#15](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/15)
 
 ## [3.0.0] - 2018-09-05
 
@@ -24,6 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Make changes for upgrading repmgr to version 4 [#4](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/4)
 
-[Unreleased]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.0.0...master
+[Unreleased]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.0.1...master
+[3.0.1]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v1.0.0...v2.0.0

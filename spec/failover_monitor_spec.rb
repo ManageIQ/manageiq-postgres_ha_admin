@@ -1,5 +1,3 @@
-require 'util/postgres_admin'
-
 describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
   let(:config_handler)  { double('ConfigHandler', :name => "Test config handler") }
   let(:config_handler2) { double('ConfigHandler2', :name => "Other config handler") }

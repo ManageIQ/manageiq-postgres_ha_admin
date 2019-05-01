@@ -1,3 +1,5 @@
+require 'tempfile'
+
 describe ManageIQ::PostgresHaAdmin::RailsConfigHandler do
   subject { described_class.new(:file_path => @yml_file.path, :environment => 'test') }
 

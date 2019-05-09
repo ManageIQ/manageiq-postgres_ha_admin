@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.0] - 2019-05-09
+
+### Added
+- Add a logical replication config handler [#17](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/17)
+
 ## [3.0.1] - 2019-03-19
 
 ### Changed

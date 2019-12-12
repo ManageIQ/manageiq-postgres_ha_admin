@@ -1,6 +1,5 @@
 require 'active_support/all'
 require 'pg'
-require 'linux_admin'
 
 module ManageIQ
 module PostgresHaAdmin

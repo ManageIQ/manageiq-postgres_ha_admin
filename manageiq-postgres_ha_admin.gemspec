@@ -28,8 +28,8 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "codeclimate-test-reporter", "~> 1.0.0"
+  spec.add_development_dependency "manageiq-style"
   spec.add_development_dependency "rake"
-  spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rubocop"
+  spec.add_development_dependency "rspec",                     "~> 3.0"
   spec.add_development_dependency "simplecov"
 end

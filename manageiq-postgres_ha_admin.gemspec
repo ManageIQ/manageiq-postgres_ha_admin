@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "activesupport",     ">=5.0", "< 6.1"
   spec.add_runtime_dependency "awesome_spawn",     "~> 1.4"
-  spec.add_runtime_dependency "manageiq-password", "~> 0.3"
+  spec.add_runtime_dependency "manageiq-password", "< 2"
   spec.add_runtime_dependency "pg"
   spec.add_runtime_dependency "pg-dsn_parser",     "~> 0.1"
 

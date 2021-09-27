@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.3] - 2021-09-27
+
+### Changed
+- Loosen manageiq-password dependency to < 2 [#26](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/26)
+- Update ruby versions to 2.5.8 minimum [#25](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/25)
+- Switch to manageiq-style [#24](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/24)
+
 ## [3.1.2] - 2020-12-21
 - Allow for Rails 6.0 [#23](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/23)
 

@@ -22,12 +22,13 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 2.5.8"
 
-  spec.add_runtime_dependency "activesupport",     ">=5.0", "< 6.1"
+  spec.add_runtime_dependency "activesupport",     ">=5.0", "< 7.0"
   spec.add_runtime_dependency "awesome_spawn",     "~> 1.4"
   spec.add_runtime_dependency "manageiq-password", "< 2"
   spec.add_runtime_dependency "pg"
   spec.add_runtime_dependency "pg-dsn_parser",     "~> 0.1"
 
+  spec.add_development_dependency "appraisal"
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "codeclimate-test-reporter", "~> 1.0.0"
   spec.add_development_dependency "manageiq-style"

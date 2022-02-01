@@ -11,3 +11,7 @@ RSpec.configure do |config|
 end
 
 require "manageiq-postgres_ha_admin"
+
+require "active_support"
+puts
+puts "\e[93mUsing ActiveSupport #{ActiveSupport.version}\e[0m"

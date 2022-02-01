@@ -40,8 +40,8 @@ describe ManageIQ::PostgresHaAdmin::ConfigHandler do
         after_failover_obj.after_failover_things(new_conninfo)
       end
 
-      expect(after_failover_obj).to receive(:after_failover_things).with(:host => "db.example.com")
-      subject.do_after_failover(:host => "db.example.com")
+      expect(after_failover_obj).to receive(:after_failover_things).with({:host => "db.example.com"})
+      subject.do_after_failover({:host => "db.example.com"})
     end
   end
 end

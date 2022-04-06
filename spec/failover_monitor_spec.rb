@@ -165,11 +165,7 @@ failover_attempts: 20
   context "private" do
     describe "#database_in_recovery?" do
       before do
-        begin
-          @connection = PG::Connection.open(:dbname => 'travis', :user => 'travis')
-        rescue PG::ConnectionBad
-          skip "travis database does not exist"
-        end
+        @connection = ConnectionHelper.connection_for('vmdb_test')
       end
 
       after do

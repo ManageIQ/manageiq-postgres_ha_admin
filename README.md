@@ -1,7 +1,7 @@
 # ManageIQ::PostgresHaAdmin
 
 [![Gem Version](https://badge.fury.io/rb/manageiq-postgres_ha_admin.svg)](http://badge.fury.io/rb/manageiq-postgres_ha_admin)
-[![Build Status](https://travis-ci.org/ManageIQ/manageiq-postgres_ha_admin.svg)](https://travis-ci.org/ManageIQ/manageiq-postgres_ha_admin)
+[![CI](https://github.com/ManageIQ/manageiq-postgres_ha_admin/actions/workflows/ci.yaml/badge.svg)](https://github.com/ManageIQ/manageiq-postgres_ha_admin/actions/workflows/ci.yaml)
 [![Code Climate](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin.svg)](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin)
 [![Test Coverage](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin/badges/coverage.svg)](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin/coverage)
 

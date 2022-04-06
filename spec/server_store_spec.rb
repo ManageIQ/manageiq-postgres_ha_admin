@@ -19,13 +19,7 @@ describe ManageIQ::PostgresHaAdmin::ServerStore do
     end
 
     before do
-      # @connection = PG::Connection.open(:dbname => 'vmdb_test')
-      begin
-        @connection = PG::Connection.open(:dbname => 'travis', :user => 'travis')
-      rescue PG::ConnectionBad
-        skip "travis database does not exist"
-      end
-
+      @connection = ConnectionHelper.connection_for('vmdb_test')
       @connection.exec("START TRANSACTION")
       @connection.exec("CREATE SCHEMA repmgr")
       @connection.exec(<<-SQL)

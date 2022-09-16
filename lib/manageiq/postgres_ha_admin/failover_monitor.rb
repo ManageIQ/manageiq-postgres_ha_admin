@@ -7,7 +7,7 @@ module PostgresHaAdmin
     include Logging
 
     FAILOVER_ATTEMPTS = 10
-    DB_CHECK_FREQUENCY = 300
+    DB_CHECK_FREQUENCY = 120
     FAILOVER_CHECK_FREQUENCY = 60
     attr_accessor :failover_attempts, :db_check_frequency, :failover_check_frequency
     attr_reader :config_handlers

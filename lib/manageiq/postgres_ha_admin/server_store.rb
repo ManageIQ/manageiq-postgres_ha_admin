@@ -25,11 +25,11 @@ module PostgresHaAdmin
     def update_servers(connection)
       new_servers = query_repmgr(connection)
       if servers_changed?(new_servers)
-        logger.info("Updating servers cache to #{new_servers}")
+        logger.info("#{log_prefix(__callee__)} Updating servers cache to #{new_servers}")
         @servers = new_servers
       end
     rescue IOError => err
-      logger.error("#{err.class}: #{err}")
+      logger.error("#{log_prefix(__callee__)} #{err.class}: #{err}")
       logger.error(err.backtrace.join("\n"))
     end
 
@@ -59,7 +59,7 @@ module PostgresHaAdmin
       db_result.clear
       result
     rescue PG::Error => err
-      logger.error("#{err.class}: #{err}")
+      logger.error("#{log_prefix(__callee__)} #{err.class}: #{err}")
       logger.error(err.backtrace.join("\n"))
       result
     end

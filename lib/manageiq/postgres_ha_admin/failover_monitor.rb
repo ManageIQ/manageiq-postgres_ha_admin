@@ -31,17 +31,17 @@ module PostgresHaAdmin
             next
           end
 
-          logger.error("Primary Database is not available for #{handler.name}. Starting to execute failover...")
+          logger.error("#{log_prefix(__callee__)} Primary Database is not available for #{handler.name}. Starting to execute failover...")
           handler.do_before_failover
 
           new_conn_info = execute_failover(handler, server_store)
           if new_conn_info
             handler.do_after_failover(new_conn_info)
           else
-            logger.error("Failover failed")
+            logger.error("#{log_prefix(__callee__)} Failover failed")
           end
         rescue => e
-          logger.error("Received #{e.class} error while monitoring #{handler.name}: #{e.message}")
+          logger.error("#{log_prefix(__callee__)} Received #{e.class} error while monitoring #{handler.name}: #{e.message}")
           logger.error(e.backtrace)
         end
       end
@@ -52,7 +52,7 @@ module PostgresHaAdmin
         begin
           monitor
         rescue => err
-          logger.error("#{err.class}: #{err}")
+          logger.error("#{log_prefix(__callee__)} #{err.class}: #{err}")
           logger.error(err.backtrace.join("\n"))
         end
         sleep(db_check_frequency)
@@ -72,13 +72,13 @@ module PostgresHaAdmin
       begin
         ha_admin_yml = YAML.load_file(ha_admin_yml_file) if File.exist?(ha_admin_yml_file)
       rescue SystemCallError, IOError => err
-        logger.error("#{err.class}: #{err}")
-        logger.info("File not loaded: #{ha_admin_yml_file}. Default settings for failover will be used.")
+        logger.error("#{log_prefix(__callee__)} #{err.class}: #{err}")
+        logger.info("#{log_prefix(__callee__)} File not loaded: #{ha_admin_yml_file}. Default settings for failover will be used.")
       end
       @failover_attempts = ha_admin_yml['failover_attempts'] || FAILOVER_ATTEMPTS
       @db_check_frequency = ha_admin_yml['db_check_frequency'] || DB_CHECK_FREQUENCY
       @failover_check_frequency = ha_admin_yml['failover_check_frequency'] || FAILOVER_CHECK_FREQUENCY
-      logger.info("FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
+      logger.info("#{log_prefix(__callee__)} FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
     end
 
     def execute_failover(handler, server_store)
@@ -86,7 +86,7 @@ module PostgresHaAdmin
         with_each_standby_connection(handler, server_store) do |connection, params|
           next if database_in_recovery?(connection)
           next unless server_store.host_is_primary?(params[:host], connection)
-          logger.info("Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
+          logger.info("#{log_prefix(__callee__)} Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
           server_store.update_servers(connection)
           handler.write(params)
           return params
@@ -111,7 +111,7 @@ module PostgresHaAdmin
     def pg_connection(params)
       PG::Connection.open(params)
     rescue PG::Error => e
-      logger.error("Failed to establish PG connection: #{e.message}")
+      logger.error("#{log_prefix(__callee__)} Failed to establish PG connection: #{e.message}")
       nil
     end
 

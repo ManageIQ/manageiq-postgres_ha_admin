@@ -125,8 +125,10 @@ failover_attempts: 20
       end
 
       it "calls the before failover callback before failover attempt" do
+        conn_info = {:dbname => "blah", :user => "root"}
         expect(config_handler).to receive(:do_before_failover).ordered
-        expect(subject).to receive(:execute_failover).ordered
+        expect(subject).to receive(:execute_failover).ordered.and_return(conn_info)
+        expect(config_handler).to receive(:do_after_failover).ordered.with(conn_info)
         subject.monitor
       end
 
@@ -182,7 +184,7 @@ failover_attempts: 20
     expect(server_store).to receive(:connection_info_list).and_return(active_databases_conninfo)
     expect(server_store).not_to receive(:update_servers)
     expect(config_handler).not_to receive(:write)
-    expect(config_handler).not_to receive(:do_after_failover)
+    expect(config_handler).to receive(:do_after_failover).never
   end
 
   def stub_monitor_constants

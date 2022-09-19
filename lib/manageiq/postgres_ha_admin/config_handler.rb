@@ -27,9 +27,12 @@ module PostgresHaAdmin
       @before_failover_cb&.call
     end
 
+    # Upon successful failover
     def do_after_failover(new_primary_conn_info)
       @after_failover_cb&.call(new_primary_conn_info)
     end
+
+    # If needed, we can add an unsuccessful failover hook
   end
 end
 end

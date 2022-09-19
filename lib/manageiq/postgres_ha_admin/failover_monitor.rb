@@ -35,9 +35,12 @@ module PostgresHaAdmin
           handler.do_before_failover
 
           new_conn_info = execute_failover(handler, server_store)
+
           if new_conn_info
+            # Upon success, we pass a connection hash
             handler.do_after_failover(new_conn_info)
           else
+            # Add failover_failed hook if we have a use case in the future
             logger.error("#{log_prefix(__callee__)} Failover failed")
           end
         rescue => e
@@ -89,6 +92,10 @@ module PostgresHaAdmin
     end
 
     def execute_failover(handler, server_store)
+      # TODO: Instead of returning false, we should raise:
+      # "No active standby"
+      # "Standby in recovery"
+      # "Exhausted all failover retry attempts" exceptions
       unless any_known_standby?(handler, server_store)
         logger.error("#{log_prefix(__callee__)} Cannot attempt failover without a known active standby.  Please verify the database.yml and ensure the database is started.")
         return false

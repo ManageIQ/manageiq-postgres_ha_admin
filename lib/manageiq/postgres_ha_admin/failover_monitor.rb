@@ -81,7 +81,19 @@ module PostgresHaAdmin
       logger.info("#{log_prefix(__callee__)} FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
     end
 
+    def any_known_standby?(handler, server_store)
+      current_host = handler.read[:host]
+      server_store.servers.any? do |server|
+        server[:host] != current_host && server[:type] == "standby"
+      end
+    end
+
     def execute_failover(handler, server_store)
+      unless any_known_standby?(handler, server_store)
+        logger.error("#{log_prefix(__callee__)} Cannot attempt failover without a known active standby.  Please verify the database.yml and ensure the database is started.")
+        return false
+      end
+
       failover_attempts.times do
         with_each_standby_connection(handler, server_store) do |connection, params|
           next if database_in_recovery?(connection)

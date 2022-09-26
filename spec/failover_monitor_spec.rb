@@ -3,6 +3,8 @@ describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
   let(:config_handler2) { double('ConfigHandler2', :name => "Other config handler") }
   let(:server_store)    { double('ServerStore') }
   let(:server_store2)   { double('ServerStore2') }
+  let(:server_store)    { double('ServerStore',  :servers => [{:type => 'primary'}, {:type => 'standby'}]) }
+  let(:server_store2)   { double('ServerStore2', :servers => [{:type => 'primary'}, {:type => 'standby'}]) }
 
   before do
     allow(ManageIQ::PostgresHaAdmin::ServerStore).to receive(:new).and_return(server_store, server_store2)
@@ -16,6 +18,7 @@ describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
 
   describe "#initialize" do
     it "override default failover settings with settings loaded from provided config file" do
+      require 'tempfile'
       ha_admin_yml_file = Tempfile.new('ha_admin.yml')
       yml_data = YAML.load(<<-DOC)
 ---
@@ -35,6 +38,35 @@ failover_attempts: 20
       expect(subject.failover_attempts).to eq described_class::FAILOVER_ATTEMPTS
       expect(subject.db_check_frequency).to eq described_class::DB_CHECK_FREQUENCY
       expect(subject.failover_check_frequency).to eq described_class::FAILOVER_CHECK_FREQUENCY
+    end
+  end
+
+  describe "#any_known_standby?" do
+    let(:standby_handler) { double(:name => "standby_test", :read => {:host => '203.0.113.1'}) }
+    let(:server_list) do
+      [
+        {:type => 'primary', :active => true, :host => '203.0.113.1', :user => 'root', :dbname => 'vmdb_test'},
+        {:type => 'standby', :active => true, :host => '203.0.113.2', :user => 'root', :dbname => 'vmdb_test'}
+      ]
+    end
+
+    it "is true with a standby that's not the current database" do
+      expect(subject.send(:any_known_standby?, standby_handler, double(:servers => server_list))).to be_truthy
+    end
+
+    it "is false with 2 primaries, no standby" do
+      server_list.last[:type] = 'primary'
+      expect(subject.send(:any_known_standby?, standby_handler, double(:servers => server_list))).to be_falsy
+    end
+
+    it "is false with no known primary or standby" do
+      server_list = []
+      expect(subject.send(:any_known_standby?, standby_handler, double(:servers => server_list))).to be_falsy
+    end
+
+    it "is false with only standby as current database" do
+      server_list.last[:host] = '203.0.113.1'
+      expect(subject.send(:any_known_standby?, standby_handler, double(:servers => server_list))).to be_falsy
     end
   end
 
@@ -93,8 +125,10 @@ failover_attempts: 20
       end
 
       it "calls the before failover callback before failover attempt" do
+        conn_info = {:dbname => "blah", :user => "root"}
         expect(config_handler).to receive(:do_before_failover).ordered
-        expect(subject).to receive(:execute_failover).ordered
+        expect(subject).to receive(:execute_failover).ordered.and_return(conn_info)
+        expect(config_handler).to receive(:do_after_failover).ordered.with(conn_info)
         subject.monitor
       end
 
@@ -150,7 +184,7 @@ failover_attempts: 20
     expect(server_store).to receive(:connection_info_list).and_return(active_databases_conninfo)
     expect(server_store).not_to receive(:update_servers)
     expect(config_handler).not_to receive(:write)
-    expect(config_handler).not_to receive(:do_after_failover)
+    expect(config_handler).to receive(:do_after_failover).never
   end
 
   def stub_monitor_constants

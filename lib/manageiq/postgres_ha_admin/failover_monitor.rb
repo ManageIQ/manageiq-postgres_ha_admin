@@ -123,6 +123,7 @@ module PostgresHaAdmin
 
     def with_each_standby_connection(handler, server_store)
       active_servers_conninfo(handler, server_store).each do |params|
+        logger.info("#{log_prefix(__callee__)} Trying standby server for #{handler.name} using conninfo: #{params.reject { |k, _v| k == :password }}")
         connection = pg_connection(params)
         next if connection.nil?
         begin

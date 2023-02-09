@@ -32,6 +32,7 @@ module PostgresHaAdmin
           end
 
           log_settings
+          server_store.log_current_server_store(handler.name)
           logger.error("#{log_prefix(__callee__)} Primary Database is not available for #{handler.name}. Starting to execute failover...")
           handler.do_before_failover
 

@@ -31,6 +31,7 @@ module PostgresHaAdmin
             next
           end
 
+          log_settings
           logger.error("#{log_prefix(__callee__)} Primary Database is not available for #{handler.name}. Starting to execute failover...")
           handler.do_before_failover
 
@@ -70,6 +71,10 @@ module PostgresHaAdmin
 
     private
 
+    def log_settings
+      logger.info("#{log_prefix(__callee__)} Current HA settings: FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
+    end
+
     def initialize_settings(ha_admin_yml_file)
       ha_admin_yml = {}
       begin
@@ -81,7 +86,7 @@ module PostgresHaAdmin
       @failover_attempts = ha_admin_yml['failover_attempts'] || FAILOVER_ATTEMPTS
       @db_check_frequency = ha_admin_yml['db_check_frequency'] || DB_CHECK_FREQUENCY
       @failover_check_frequency = ha_admin_yml['failover_check_frequency'] || FAILOVER_CHECK_FREQUENCY
-      logger.info("#{log_prefix(__callee__)} FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
+      log_settings
     end
 
     def any_known_standby?(handler, server_store)

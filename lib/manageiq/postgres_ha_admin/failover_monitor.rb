@@ -26,7 +26,7 @@ module PostgresHaAdmin
         begin
           connection = pg_connection(handler.read)
           if connection
-            server_store.update_servers(connection)
+            server_store.update_servers(connection, handler.name)
             connection.finish
             next
           end
@@ -42,7 +42,6 @@ module PostgresHaAdmin
             handler.do_after_failover(new_conn_info)
           else
             # Add failover_failed hook if we have a use case in the future
-            logger.error("#{log_prefix(__callee__)} Failover failed")
           end
         rescue => e
           logger.error("#{log_prefix(__callee__)} Received #{e.class} error while monitoring #{handler.name}: #{e.message}")
@@ -102,7 +101,7 @@ module PostgresHaAdmin
       # "Standby in recovery"
       # "Exhausted all failover retry attempts" exceptions
       unless any_known_standby?(handler, server_store)
-        logger.error("#{log_prefix(__callee__)} Cannot attempt failover without a known active standby.  Please verify the database.yml and ensure the database is started.")
+        logger.error("#{log_prefix(__callee__)} Cannot attempt failover without a known active standby for #{handler.name}.  Please verify the database.yml and ensure the database is started.")
         return false
       end
 
@@ -110,13 +109,14 @@ module PostgresHaAdmin
         with_each_standby_connection(handler, server_store) do |connection, params|
           next if database_in_recovery?(connection)
           next unless server_store.host_is_primary?(params[:host], connection)
-          logger.info("#{log_prefix(__callee__)} Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
-          server_store.update_servers(connection)
+          logger.info("#{log_prefix(__callee__)} Failing over for #{handler.name} to server using conninfo: #{params.reject { |k, _v| k == :password }}")
+          server_store.update_servers(connection, handler.name)
           handler.write(params)
           return params
         end
         sleep(failover_check_frequency)
       end
+      logger.error("#{log_prefix(__callee__)} Failover failed for #{handler.name}")
       false
     end
 

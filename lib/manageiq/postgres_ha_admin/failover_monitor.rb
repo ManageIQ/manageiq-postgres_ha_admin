@@ -110,7 +110,7 @@ module PostgresHaAdmin
         with_each_standby_connection(handler, server_store) do |connection, params|
           next if database_in_recovery?(connection)
           next unless server_store.host_is_primary?(params[:host], connection)
-          logger.info("#{log_prefix(__callee__)} Failing over for #{handler.name} to server using conninfo: #{params.reject { |k, _v| k == :password }}")
+          logger.info("#{log_prefix(__callee__)} Failing over for #{handler.name} to server using conninfo: #{server_store.sanitized_connection_parameters(params)}")
           server_store.update_servers(connection, handler.name)
           handler.write(params)
           return params
@@ -123,7 +123,7 @@ module PostgresHaAdmin
 
     def with_each_standby_connection(handler, server_store)
       active_servers_conninfo(handler, server_store).each do |params|
-        logger.info("#{log_prefix(__callee__)} Trying standby server for #{handler.name} using conninfo: #{params.reject { |k, _v| k == :password }}")
+        logger.info("#{log_prefix(__callee__)} Checking active server for #{handler.name} using conninfo: #{server_store.sanitized_connection_parameters(params)}")
         connection = pg_connection(params)
         next if connection.nil?
         begin

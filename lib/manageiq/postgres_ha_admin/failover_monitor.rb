@@ -38,12 +38,8 @@ module PostgresHaAdmin
 
           new_conn_info = execute_failover(handler, server_store)
 
-          if new_conn_info
-            # Upon success, we pass a connection hash
-            handler.do_after_failover(new_conn_info)
-          else
-            # Add failover_failed hook if we have a use case in the future
-          end
+          # Upon success, we pass a connection hash
+          handler.do_after_failover(new_conn_info) if new_conn_info
         rescue => e
           logger.error("#{log_prefix(__callee__)} Received #{e.class} error while monitoring #{handler.name}: #{e.message}")
           logger.error(e.backtrace)

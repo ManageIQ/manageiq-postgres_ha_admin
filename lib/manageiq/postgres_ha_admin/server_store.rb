@@ -22,10 +22,11 @@ module PostgresHaAdmin
       end
     end
 
-    def update_servers(connection)
+    def update_servers(connection, handler_name = "unspecified handler")
       new_servers = query_repmgr(connection)
       if servers_changed?(new_servers)
-        logger.info("#{log_prefix(__callee__)} Updating servers cache to #{new_servers}")
+        log_current_server_store(handler_name)
+        logger.info("#{log_prefix(__callee__)} Updating servers cache to #{sanitized_servers_array(new_servers)} for #{handler_name}")
         @servers = new_servers
       end
     rescue IOError => err
@@ -40,6 +41,18 @@ module PostgresHaAdmin
         end
       end
       false
+    end
+
+    def log_current_server_store(handler_name)
+      logger.info("#{log_prefix(__callee__)} Current servers cache: #{sanitized_servers_array(@servers)} for #{handler_name}")
+    end
+
+    def sanitized_servers_array(server_array)
+      server_array.collect { |p| sanitized_connection_parameters(p) }
+    end
+
+    def sanitized_connection_parameters(params)
+      params.reject { |k, _v| k.to_s == "password" }
     end
 
     private

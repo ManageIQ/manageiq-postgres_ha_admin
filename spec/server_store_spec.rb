@@ -43,13 +43,13 @@ describe ManageIQ::PostgresHaAdmin::ServerStore do
 
     describe "#update_servers" do
       it "updates the servers list" do
-        subject.update_servers(@connection)
+        subject.update_servers(@connection, "test handler")
 
         expect(subject.servers).to eq initial_db_list
 
         add_new_record
 
-        subject.update_servers(@connection)
+        subject.update_servers(@connection, "test handler")
         expect(subject.servers).to eq new_db_list
       end
     end

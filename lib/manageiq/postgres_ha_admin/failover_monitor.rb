@@ -26,23 +26,20 @@ module PostgresHaAdmin
         begin
           connection = pg_connection(handler.read)
           if connection
-            server_store.update_servers(connection)
+            server_store.update_servers(connection, handler.name)
             connection.finish
             next
           end
 
+          log_settings
+          server_store.log_current_server_store(handler.name)
           logger.error("#{log_prefix(__callee__)} Primary Database is not available for #{handler.name}. Starting to execute failover...")
           handler.do_before_failover
 
           new_conn_info = execute_failover(handler, server_store)
 
-          if new_conn_info
-            # Upon success, we pass a connection hash
-            handler.do_after_failover(new_conn_info)
-          else
-            # Add failover_failed hook if we have a use case in the future
-            logger.error("#{log_prefix(__callee__)} Failover failed")
-          end
+          # Upon success, we pass a connection hash
+          handler.do_after_failover(new_conn_info) if new_conn_info
         rescue => e
           logger.error("#{log_prefix(__callee__)} Received #{e.class} error while monitoring #{handler.name}: #{e.message}")
           logger.error(e.backtrace)
@@ -70,6 +67,10 @@ module PostgresHaAdmin
 
     private
 
+    def log_settings
+      logger.info("#{log_prefix(__callee__)} Current HA settings: FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
+    end
+
     def initialize_settings(ha_admin_yml_file)
       ha_admin_yml = {}
       begin
@@ -81,7 +82,7 @@ module PostgresHaAdmin
       @failover_attempts = ha_admin_yml['failover_attempts'] || FAILOVER_ATTEMPTS
       @db_check_frequency = ha_admin_yml['db_check_frequency'] || DB_CHECK_FREQUENCY
       @failover_check_frequency = ha_admin_yml['failover_check_frequency'] || FAILOVER_CHECK_FREQUENCY
-      logger.info("#{log_prefix(__callee__)} FAILOVER_ATTEMPTS=#{@failover_attempts} DB_CHECK_FREQUENCY=#{@db_check_frequency} FAILOVER_CHECK_FREQUENCY=#{@failover_check_frequency}")
+      log_settings
     end
 
     def any_known_standby?(handler, server_store)
@@ -97,7 +98,7 @@ module PostgresHaAdmin
       # "Standby in recovery"
       # "Exhausted all failover retry attempts" exceptions
       unless any_known_standby?(handler, server_store)
-        logger.error("#{log_prefix(__callee__)} Cannot attempt failover without a known active standby.  Please verify the database.yml and ensure the database is started.")
+        logger.error("#{log_prefix(__callee__)} Cannot attempt failover without a known active standby for #{handler.name}.  Please verify the database.yml and ensure the database is started.")
         return false
       end
 
@@ -105,18 +106,20 @@ module PostgresHaAdmin
         with_each_standby_connection(handler, server_store) do |connection, params|
           next if database_in_recovery?(connection)
           next unless server_store.host_is_primary?(params[:host], connection)
-          logger.info("#{log_prefix(__callee__)} Failing over to server using conninfo: #{params.reject { |k, _v| k == :password }}")
-          server_store.update_servers(connection)
+          logger.info("#{log_prefix(__callee__)} Failing over for #{handler.name} to server using conninfo: #{server_store.sanitized_connection_parameters(params)}")
+          server_store.update_servers(connection, handler.name)
           handler.write(params)
           return params
         end
         sleep(failover_check_frequency)
       end
+      logger.error("#{log_prefix(__callee__)} Failover failed for #{handler.name}")
       false
     end
 
     def with_each_standby_connection(handler, server_store)
       active_servers_conninfo(handler, server_store).each do |params|
+        logger.info("#{log_prefix(__callee__)} Checking active server for #{handler.name} using conninfo: #{server_store.sanitized_connection_parameters(params)}")
         connection = pg_connection(params)
         next if connection.nil?
         begin

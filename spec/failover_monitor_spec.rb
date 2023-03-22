@@ -1,9 +1,7 @@
 describe ManageIQ::PostgresHaAdmin::FailoverMonitor do
   let(:config_handler)  { double('ConfigHandler', :name => "Test config handler") }
   let(:config_handler2) { double('ConfigHandler2', :name => "Other config handler") }
-  let(:server_store)    { double('ServerStore') }
-  let(:server_store2)   { double('ServerStore2') }
-  let(:server_store)    { double('ServerStore',  :servers => [{:type => 'primary'}, {:type => 'standby'}]) }
+  let(:server_store)    { double('ServerStore',  :log_current_server_store => nil, :sanitized_connection_parameters => {}, :servers => [{:type => 'primary'}, {:type => 'standby'}]) }
   let(:server_store2)   { double('ServerStore2', :servers => [{:type => 'primary'}, {:type => 'standby'}]) }
 
   before do

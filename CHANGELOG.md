@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.2.1] - 2023-03-22
+### Changed
+- Improve failover logging [#39](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/39)
+
 ## [3.2.0] - 2022-09-26
 ### Added
 - Add simple prefix to all log lines [#38](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/38)
@@ -61,7 +65,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Make changes for upgrading repmgr to version 4 [#4](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/4)
 
-[Unreleased]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.2.0...master
+[Unreleased]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.2.1...master
+[3.2.1]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.1.4...v3.2.0
 [3.1.4]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.1.3...v3.1.4
 [3.1.3]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.1.2...v3.1.3

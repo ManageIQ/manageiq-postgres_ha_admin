@@ -5,7 +5,7 @@ describe ManageIQ::PostgresHaAdmin::RailsConfigHandler do
 
   before do
     @yml_file = Tempfile.new('database.yml')
-    yml_data = YAML.load(<<-DOC)
+    data = <<-DOC
 ---
 base: &base
   username: user
@@ -16,6 +16,12 @@ test: &test
   pool: 3
   database: vmdb_test
 DOC
+    yml_data =
+      if YAML.respond_to?(:safe_load)
+        YAML.safe_load(data, :aliases => true)
+      else
+        YAML.load(data)
+      end
     File.write(@yml_file.path, yml_data.to_yaml)
   end
 

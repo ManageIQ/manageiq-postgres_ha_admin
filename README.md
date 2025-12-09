@@ -2,8 +2,6 @@
 
 [![Gem Version](https://badge.fury.io/rb/manageiq-postgres_ha_admin.svg)](http://badge.fury.io/rb/manageiq-postgres_ha_admin)
 [![CI](https://github.com/ManageIQ/manageiq-postgres_ha_admin/actions/workflows/ci.yaml/badge.svg)](https://github.com/ManageIQ/manageiq-postgres_ha_admin/actions/workflows/ci.yaml)
-[![Code Climate](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin.svg)](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin)
-[![Test Coverage](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin/badges/coverage.svg)](https://codeclimate.com/github/ManageIQ/manageiq-postgres_ha_admin/coverage)
 
 [![Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ManageIQ/manageiq-postgres_ha_admin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 

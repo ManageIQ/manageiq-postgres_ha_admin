@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Rails 8.0 support
+
+## [3.4.0] - 2025-01-03
+### Added
+- Rails 7.1/7.2 support [#50](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/50)
+
 ## [3.3.0] - 2024-05-14
 ### Added
 - Rails 7 support [#43](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/43)
@@ -69,7 +76,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Make changes for upgrading repmgr to version 4 [#4](https://github.com/ManageIQ/manageiq-postgres_ha_admin/pull/4)
 
-[Unreleased]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.3.0...master
+[Unreleased]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.4.0...master
+[3.4.0]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.2.1...v3.3.0
 [3.2.1]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/ManageIQ/manageiq-postgres_ha_admin/compare/v3.1.4...v3.2.0

@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = ">= 3.2"
 
-  spec.add_runtime_dependency "activesupport",     ">=7.2.3", "<8.1"
+  spec.add_runtime_dependency "activesupport",     ">=7.2.3", "<8.2"
   spec.add_runtime_dependency "awesome_spawn",     "~> 1.4"
   spec.add_runtime_dependency "manageiq-password", "< 2"
   spec.add_runtime_dependency "pg"

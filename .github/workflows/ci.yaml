@@ -24,6 +24,7 @@ jobs:
         rails-version:
         - '7.2'
         - '8.0'
+        - '8.1'
     services:
       postgres:
         image: manageiq/postgresql:13
